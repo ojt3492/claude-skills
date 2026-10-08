@@ -8,6 +8,7 @@ spec: {"text","ratio":"16:9|9:16|1:1","fps":30,"copyright","palette":{"cream","i
        "scenes":[{"type":"marquee","dur":2,"wipe":"hard|up|down|left|right"}, ...]}
 """
 import json, math, os, random, subprocess, sys
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 WIN = os.environ.get("WINDIR", "C:/Windows") + "/Fonts/"
