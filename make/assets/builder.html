@@ -1,0 +1,69 @@
+<h2 class="sr-only">타이포 모션 영상 구성 빌더: 장면 버튼을 눌러 타임라인에 추가하고 효과와 비율을 고릅니다</h2>
+<style>
+.mv{display:grid;gap:14px}
+.mv .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.mv .lab{font-size:13px;color:var(--text-secondary);min-width:44px}
+.mv .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.mv .sc{text-align:left;padding:10px 12px;height:auto;display:block}
+.mv .sc b{font-weight:500;font-size:14px;display:block}
+.mv .sc span{font-size:12px;color:var(--text-secondary)}
+.mv .on{background:var(--bg-accent);border-color:var(--border-accent);color:var(--text-accent)}
+.mv .item{display:grid;grid-template-columns:24px 1fr auto auto auto;gap:8px;align-items:center;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);background:var(--surface-2)}
+.mv .item .n{font-size:12px;color:var(--text-muted)}
+.mv .item .nm{font-size:14px;font-weight:500}
+.mv .item button{padding:2px 8px;height:30px}
+.mv .err{font-size:13px;color:var(--text-danger);min-height:18px}
+.mv .tot{font-size:13px;color:var(--text-secondary)}
+</style>
+<div class="mv" id="mv">
+  <div class="row"><span class="lab">문구</span><input id="txt" type="text" value="BBANGDUCK" style="flex:1;min-width:200px" aria-label="영상 문구"></div>
+  <div class="row"><span class="lab">비율</span><span id="ratios"></span></div>
+  <div class="row"><span class="lab">프리셋</span><button data-p="lookbook">lookbook 15초</button><button data-p="short">short 7.5초</button><button data-p="clear">비우기</button></div>
+  <div><div class="lab" style="margin-bottom:6px">장면 추가 (누를 때마다 타임라인에 추가)</div><div class="grid" id="scenes"></div></div>
+  <div><div class="lab" style="margin-bottom:6px">타임라인</div><div id="tl" style="display:grid;gap:6px"></div><div class="tot" id="tot" style="margin-top:6px"></div></div>
+  <div class="row"><span class="lab">효과</span><span id="fx"></span></div>
+  <div class="row"><button id="go">이 구성으로 미리보기 만들기 ↗</button><span class="err" id="err" role="alert"></span></div>
+</div>
+<script>
+const SC={marquee:[1,'글자 바둑판 마키'],bounce:[1.5,'한 글자씩 튀어 등장'],tunnel:[1,'아웃라인 터널'],halftone:[1,'도트 하프톤 파도'],glitch:[1.5,'슬라이스 글리치'],emblem:[1.5,'원형 엠블럼 회전'],logo:[1.5,'로고 + 저작권']};
+const PR={lookbook:[['marquee',2,'hard'],['bounce',2,'hard'],['tunnel',2.5,'hard'],['halftone',2.5,'up'],['glitch',2.5,'hard'],['emblem',2,'right'],['logo',1.5,'up']],short:[['marquee',2,'hard'],['bounce',2,'hard'],['emblem',2,'right'],['logo',1.5,'up']]};
+const WP=[['hard','하드컷'],['up','위로 와이프'],['down','아래로'],['left','왼쪽으로'],['right','오른쪽으로']];
+let tl=[],ratio='16:9',fx=new Set(),$=id=>document.getElementById(id);
+const err=m=>$('err').textContent=m;
+function draw(){
+  const t=$('tl');t.innerHTML='';
+  tl.forEach((s,i)=>{
+    const d=document.createElement('div');d.className='item';
+    d.innerHTML='<span class="n">'+(i+1)+'</span><span class="nm">'+s[0]+'</span>'+
+    '<span><button data-a="dm" data-i="'+i+'" aria-label="길이 줄이기">-</button> <span style="font-size:13px;display:inline-block;min-width:34px;text-align:center">'+s[1].toFixed(1)+'초</span> <button data-a="dp" data-i="'+i+'" aria-label="길이 늘리기">+</button></span>'+
+    '<select data-a="w" data-i="'+i+'" aria-label="전환">'+WP.map(w=>'<option value="'+w[0]+'"'+(w[0]===s[2]?' selected':'')+'>'+w[1]+'</option>').join('')+'</select>'+
+    '<span><button data-a="up" data-i="'+i+'" aria-label="위로"><i class="ti ti-arrow-up"></i></button><button data-a="dn" data-i="'+i+'" aria-label="아래로"><i class="ti ti-arrow-down"></i></button><button data-a="rm" data-i="'+i+'" aria-label="삭제"><i class="ti ti-x"></i></button></span>';
+    t.appendChild(d);
+  });
+  const sum=tl.reduce((a,s)=>a+s[1],0);
+  $('tot').textContent=tl.length?('총 '+sum.toFixed(1)+'초 · 장면 '+tl.length+'개'):'아직 장면이 없습니다. 위 버튼을 눌러 추가하세요.';
+}
+function chips(){
+  $('ratios').innerHTML='';['16:9','9:16','1:1'].forEach(r=>{const b=document.createElement('button');b.textContent=r;b.className=r===ratio?'on':'';b.onclick=()=>{ratio=r;chips()};$('ratios').appendChild(b)});
+  $('fx').innerHTML='';[['shake','흔들림'],['pulse','줌 펄스']].forEach(f=>{const b=document.createElement('button');b.textContent=f[1];b.className=fx.has(f[0])?'on':'';b.onclick=()=>{fx.has(f[0])?fx.delete(f[0]):fx.add(f[0]);chips()};$('fx').appendChild(b)});
+}
+Object.keys(SC).forEach(k=>{const b=document.createElement('button');b.className='sc';b.innerHTML='<b>'+k+'</b><span>'+SC[k][1]+'</span>';b.onclick=()=>{tl.push([k,Math.max(2,SC[k][0]),'hard']);err('');draw()};$('scenes').appendChild(b)});
+document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{tl=b.dataset.p==='clear'?[]:PR[b.dataset.p].map(s=>s.slice());err('');draw()});
+$('tl').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const i=+b.dataset.i,a=b.dataset.a;
+  if(a==='dm')tl[i][1]=Math.max(SC[tl[i][0]][0],tl[i][1]-0.5);
+  if(a==='dp')tl[i][1]+=0.5;
+  if(a==='rm')tl.splice(i,1);
+  if(a==='up'&&i>0)[tl[i-1],tl[i]]=[tl[i],tl[i-1]];
+  if(a==='dn'&&i<tl.length-1)[tl[i+1],tl[i]]=[tl[i],tl[i+1]];
+  draw()});
+$('tl').addEventListener('change',e=>{if(e.target.dataset.a==='w')tl[+e.target.dataset.i][2]=e.target.value});
+$('txt').addEventListener('input',()=>err(''));
+$('go').onclick=()=>{
+  const text=$('txt').value.trim();
+  if(!text){err('문구를 입력하세요');return}
+  if(!tl.length){err('장면을 하나 이상 추가하세요');return}
+  const sum=tl.reduce((a,s)=>a+s[1],0);
+  sendPrompt('영상 구성 확정 (/make videos 빌더)\n문구: '+text+'\n비율: '+ratio+'\n효과: '+(fx.size?[...fx].join(', '):'없음')+'\n장면: '+tl.map(s=>s[0]+' '+s[1].toFixed(1)+'s '+s[2]).join(' | ')+'\n총 길이: '+sum.toFixed(1)+'초\n이 구성으로 spec을 만들고 미리보기를 보여줘.');
+};
+chips();draw();
+</script>
